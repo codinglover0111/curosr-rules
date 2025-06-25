@@ -1,0 +1,82 @@
+---
+description: This guide details the correct procedure for integrating Prisma with Better Auth in a NestJS project. It covers crucial steps like using the Better Auth CLI for schema generation and configuring the Prisma Client's output path. Refer to this rule when performing the initial setup or troubleshooting integration problems between Prisma and Better Auth to avoid common pitfalls.
+globs: 
+alwaysApply: false
+---
+# Prisma와 Better Auth 연동 가이드
+
+이 문서는 NestJS 프로젝트에서 Prisma와 Better Auth를 올바르게 연동하는 절차를 설명합니다.
+
+잘못된 설정으로 인해 발생했던 문제를 방지하기 위해 이 가이드를 따르는 것을 권장합니다.
+
+### 주요 원칙
+
+1.  **Prisma Client 출력 경로**: Prisma Client는 별도의 디렉토리가 아닌 `node_modules/.prisma/client`에 생성되어야 합니다. 이를 통해 `import { PrismaClient } from '@prisma/client'`와 같이 표준 경로로 임포트할 수 있습니다.
+2.  **인증 스키마 관리**: `User`, `Session` 등 인증에 필요한 Prisma 스키마는 직접 작성하는 것이 아니라, `better-auth` CLI를 사용하여 자동으로 생성해야 합니다.
+
+### 설정 절차
+
+1.  **Prisma 초기화**
+
+    프로젝트에 Prisma를 설정합니다. 프로젝트에서 사용하는 패키지 매니저를 따릅니다.
+
+    ```sh
+    # Prisma CLI 개발 의존성 추가
+    bun add -d prisma
+
+    # PostgreSQL 데이터소스로 Prisma 프로젝트 초기화
+    bunx prisma init --datasource-provider postgresql
+    ```
+
+    이 명령은 `[prisma/schema.prisma](mdc:prisma/schema.prisma)` 파일과 데이터베이스 연결 정보가 담길 `[.env](mdc:.env)` 파일의 템플릿을 생성합니다.
+
+2.  **Better Auth 스키마 생성**
+
+    **가장 중요한 단계입니다.** `User` 모델을 수동으로 추가하지 마십시오. 대신, [Better Auth CLI 문서](mdc:https:/www.better-auth.com/docs/concepts/cli)에 따라 다음 명령을 실행하여 필요한 스키마를 자동으로 생성합니다.
+
+    ```sh
+    npx @better-auth/cli@latest generate
+    ```
+
+    이 명령은 `[lib/auth.ts](mdc:lib/auth.ts)` 설정을 읽어 `[prisma/schema.prisma](mdc:prisma/schema.prisma)` 파일에 `User`, `Session`, `Account`, `Verification` 모델을 자동으로 추가합니다.
+
+3.  **Prisma Client 생성 경로 확인**
+
+    `[prisma/schema.prisma](mdc:prisma/schema.prisma)` 파일 내의 `generator` 블록이 다음과 같이 `node_modules` 경로를 사용하도록 설정되었는지 확인합니다.
+
+    ```prisma
+    generator client {
+      provider = "prisma-client-js"
+      output   = "../node_modules/.prisma/client"
+    }
+    ```
+
+4.  **Prisma Client 생성**
+
+    스키마 파일이 준비되면, 다음 명령어로 Prisma Client 코드를 생성합니다.
+
+    ```sh
+    bunx prisma generate
+    ```
+
+5.  **NestJS 연동**
+
+    생성된 Prisma Client를 NestJS 애플리케이션에 통합하기 위해 `[src/prisma/prisma.service.ts](mdc:src/prisma/prisma.service.ts)`와 `[src/prisma/prisma.module.ts](mdc:src/prisma/prisma.module.ts)`를 생성하고, `PrismaModule`을 `[src/app.module.ts](mdc:src/app.module.ts)`에 추가합니다.
+
+6.  **Better Auth 설정**
+
+    `[lib/auth.ts](mdc:lib/auth.ts)` 파일에서 Prisma 어댑터를 사용하여 `betterAuth`를 설정합니다.
+
+    ```typescript
+    import { betterAuth } from 'better-auth';
+    import { prismaAdapter } from 'better-auth/adapters/prisma';
+    import { PrismaClient } from '@prisma/client';
+
+    const prisma = new PrismaClient();
+
+    export const auth = betterAuth({
+      database: prismaAdapter(prisma, {
+        provider: 'postgresql',
+      }),
+    });
+    ```

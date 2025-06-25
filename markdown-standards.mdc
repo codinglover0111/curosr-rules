@@ -1,0 +1,38 @@
+---
+description: This rule provides standards for authoring Markdown files to ensure consistency and readability within the project. Apply this rule whenever you are creating or editing Markdown files (e.g., README.md, documentation). Key guidelines include specifying the language for fenced code blocks and using a single space after list markers. Adhering to these standards helps prevent common linting errors from tools like Markdownlint.
+globs: 
+alwaysApply: false
+---
+# 마크다운 작성 표준
+
+마크다운 파일을 작성하거나 수정할 때는 다음 표준을 반드시 준수해주십시오. 이는 코드의 일관성과 가독성을 유지하는 데 중요합니다.
+
+## 1. 코드 블록 (Fenced Code Blocks)
+
+모든 코드 블록에는 해당 코드의 언어를 명시해야 합니다. (예: `typescript`, `bash`, `text`)
+
+**좋은 예시:**
+```typescript
+const greeting = "Hello, World!";
+console.log(greeting);
+```
+
+**나쁜 예시:**
+```
+const greeting = "Hello, World!";
+console.log(greeting);
+```
+
+## 2. 목록 (Lists)
+
+목록을 작성할 때, 마커(예: `-`, `*`, `1.`) 다음에는 반드시 **하나의 공백**만 사용해야 합니다.
+
+**좋은 예시:**
+- 첫 번째 항목
+- 두 번째 항목
+
+**나쁜 예시:**
+-  첫 번째 항목 (공백 2개)
+-   두 번째 항목 (공백 3개)
+
+이 규칙들을 따라주시면, `Markdownlint`와 같은 린팅 도구에서 발생하는 일반적인 오류(MD040, MD030 등)를 방지할 수 있습니다.
